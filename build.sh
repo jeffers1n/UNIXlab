@@ -45,18 +45,16 @@ case "$source_file" in
         ;;
 esac
 
+# Создание временного каталога
 temp_dir=$(mktemp -d)
-if [ $? -ne 0 ]; then
-    echo "Failed to create temporary directory"
-    exit 1
-fi
 
 trap 'rm -rf "$temp_dir"' EXIT
 
 original_dir=$(pwd)
 
 cp "$source_file" "$temp_dir/"
-cd "$temp_dir" || exit 1
+
+cd "$temp_dir"
 
 if [ "$compiler" = "pdflatex" ]; then
     jobname=$(basename "$output_file" .pdf)
@@ -68,10 +66,6 @@ if [ "$compiler" = "pdflatex" ]; then
     fi
 else
     $compiler -o "$output_file" "$(basename "$source_file")" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Compilation failed"
-        exit 3
-    fi
 fi
 
 mv "$output_file" "$original_dir/"
