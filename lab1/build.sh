@@ -45,7 +45,6 @@ case "$source_file" in
         ;;
 esac
 
-# Создание временного каталога
 temp_dir=$(mktemp -d)
 
 trap 'rm -rf "$temp_dir"' EXIT
