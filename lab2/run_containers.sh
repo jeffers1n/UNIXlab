@@ -1,41 +1,26 @@
-#!/bin/bash
+#!/bin/sh
 
-# Остановить и удалить все существующие контейнеры
-echo "Останавливаю и удаляю все контейнеры..."
-docker container stop $(docker container ls -aq) 2>/dev/null || true
-docker container rm $(docker container ls -aq) 2>/dev/null || true
+set -e
 
-# Удалить volume
-echo "Удаляю volume..."
-docker volume rm shared_volume 2>/dev/null || true
+VOLUME_NAME="shared_volume"
+IMAGE_NAME="file-manager"
 
-# Создать новый volume
-echo "Создаю новый volume..."
-docker volume create shared_volume
+# Создание тома
+if ! docker volume inspect "$VOLUME_NAME" >/dev/null 2>&1; then
+    echo "Creating volume $VOLUME_NAME..."
+    docker volume create "$VOLUME_NAME"
+fi
 
-# Пересобрать образ
-echo "Пересобираю образ..."
-docker build -t concurrent-container .
+# Сборка образа
+docker build -t "$IMAGE_NAME" .
 
-# Запустить новые контейнеры
-echo "Запускаю контейнеры..."
-for i in $(seq 1 ${1:-3})
-do
-    docker container run -d --name concurrent-container-$i \
-        -v shared_volume:/shared concurrent-container
-    echo "Контейнер $i запущен"
-done
-
-# Проверить, что контейнеры запущены
-echo "Список запущенных контейнеров:"
-docker container ls --filter ancestor=concurrent-container
-
-# Очистка неиспользуемых ресурсов
-docker container prune -f  # удаляет остановленные контейнеры
-docker image prune -f      # удаляет неиспользуемые образы
-
-echo "Для просмотра логов используйте:"
-for i in $(seq 1 ${1:-3})
-do
-    echo "sudo docker logs -f concurrent-container-$i"
+# Запуск контейнеров
+echo "Starting containers..."
+i=1
+while [ $i -le 10 ]; do
+    docker run -d \
+      --name "${IMAGE_NAME}_${i}" \
+      -v "$VOLUME_NAME:/shared" \
+      "$IMAGE_NAME"
+    i=$((i + 1))
 done
