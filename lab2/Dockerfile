@@ -1,14 +1,10 @@
-FROM ubuntu:20.04
+FROM ubuntu:latest
 
-# Установка необходимых пакетов
-RUN apt-get update && \
-    apt-get install -y util-linux coreutils bash procps grep && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y coreutils findutils
 
-# Копирование скрипта
-COPY container_script.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/container_script.sh
+COPY script.sh /script.sh
+RUN chmod +x /script.sh
 
-# Запуск скрипта
-ENTRYPOINT ["/bin/bash", "/usr/local/bin/container_script.sh"] 
+VOLUME /shared
+
+ENTRYPOINT ["/script.sh"]
